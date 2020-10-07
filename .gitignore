@@ -1,3 +1,5 @@
 *.exe
 SDL2.dll
 res/*.bmp
+res/*
+*.dll
