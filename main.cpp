@@ -28,7 +28,8 @@ bool loadMedia();
 void close();
 
 //Loads individual image
-SDL_Surface *loadSurface(std::string path);
+SDL_Surface *
+loadSurface(std::string path);
 
 //The window we'll be rendering to
 SDL_Window *gWindow = NULL;
@@ -40,7 +41,7 @@ SDL_Surface *gScreenSurface = NULL;
 SDL_Surface *gKeyPressSurfaces[KEY_PRESS_SURFACE_TOTAL];
 
 //Current displayed image
-SDL_Surface *gCurrentSurface = NULL;
+SDL_Surface *gStretchedSurface = NULL;
 
 bool init()
 {
@@ -123,8 +124,8 @@ bool loadMedia()
 void close()
 {
     //Deallocate surface
-    SDL_FreeSurface(gCurrentSurface);
-    gCurrentSurface = NULL;
+    SDL_FreeSurface(gStretchedSurface);
+    gStretchedSurface = NULL;
 
     //Destroy window
     SDL_DestroyWindow(gWindow);
@@ -135,14 +136,29 @@ void close()
 
 SDL_Surface *loadSurface(std::string path)
 {
+    //The final optimized image
+    SDL_Surface *optimizedSurface = NULL;
+
     //Load image at specified path
     SDL_Surface *loadedSurface = SDL_LoadBMP(path.c_str());
     if (loadedSurface == NULL)
     {
         printf("Unable to load image %s! SDL Error: %s\n", path.c_str(), SDL_GetError());
     }
+    else
+    {
+        //Convert surface to screen format
+        optimizedSurface = SDL_ConvertSurface(loadedSurface, gScreenSurface->format, 0);
+        if (optimizedSurface == NULL)
+        {
+            printf("Unable to optimize image %s! SDL Error: %s\n", path.c_str(), SDL_GetError());
+        }
 
-    return loadedSurface;
+        //Get rid of old loaded surface
+        SDL_FreeSurface(loadedSurface);
+    }
+
+    return optimizedSurface;
 }
 
 int main(int argc, char *args[])
@@ -168,7 +184,7 @@ int main(int argc, char *args[])
             SDL_Event e;
 
             //Set default current surface
-            gCurrentSurface = gKeyPressSurfaces[KEY_PRESS_SURFACE_DEFAULT];
+            gStretchedSurface = gKeyPressSurfaces[KEY_PRESS_SURFACE_DEFAULT];
 
             //While application is running
             while (!quit)
@@ -188,29 +204,34 @@ int main(int argc, char *args[])
                         switch (e.key.keysym.sym)
                         {
                         case SDLK_UP:
-                            gCurrentSurface = gKeyPressSurfaces[KEY_PRESS_SURFACE_UP];
+                            gStretchedSurface = gKeyPressSurfaces[KEY_PRESS_SURFACE_UP];
                             break;
 
                         case SDLK_DOWN:
-                            gCurrentSurface = gKeyPressSurfaces[KEY_PRESS_SURFACE_DOWN];
+                            gStretchedSurface = gKeyPressSurfaces[KEY_PRESS_SURFACE_DOWN];
                             break;
 
                         case SDLK_LEFT:
-                            gCurrentSurface = gKeyPressSurfaces[KEY_PRESS_SURFACE_LEFT];
+                            gStretchedSurface = gKeyPressSurfaces[KEY_PRESS_SURFACE_LEFT];
                             break;
 
                         case SDLK_RIGHT:
-                            gCurrentSurface = gKeyPressSurfaces[KEY_PRESS_SURFACE_RIGHT];
+                            gStretchedSurface = gKeyPressSurfaces[KEY_PRESS_SURFACE_RIGHT];
                             break;
 
                         default:
-                            gCurrentSurface = gKeyPressSurfaces[KEY_PRESS_SURFACE_DEFAULT];
+                            gStretchedSurface = gKeyPressSurfaces[KEY_PRESS_SURFACE_DEFAULT];
                             break;
                         }
                     }
                 }
-                //Apply the image
-                SDL_BlitSurface(gCurrentSurface, NULL, gScreenSurface, NULL);
+                //Apply the image stretched
+                SDL_Rect stretchRect;
+                stretchRect.x = 0;
+                stretchRect.y = 0;
+                stretchRect.w = SCREEN_WIDTH;
+                stretchRect.h = SCREEN_HEIGHT;
+                SDL_BlitScaled(gStretchedSurface, NULL, gScreenSurface, &stretchRect);
 
                 //Update the surface
                 SDL_UpdateWindowSurface(gWindow);
