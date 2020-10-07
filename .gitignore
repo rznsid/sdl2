@@ -1,4 +1,3 @@
 *.exe
-*.dll
-.gitignore
+SDL2.dll
 res/*.bmp
