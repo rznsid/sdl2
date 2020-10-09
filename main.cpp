@@ -8,16 +8,61 @@
 const int SCREEN_WIDTH = 640;
 const int SCREEN_HEIGHT = 480;
 
-//Key press surface constants
-enum KeyPressTextures
+//Texture wrapper class
+class LTexture
 {
-    KEY_PRESS_TEXTURE_DEFAULT,
-    KEY_PRESS_TEXTURE_UP,
-    KEY_PRESS_TEXTURE_LEFT,
-    KEY_PRESS_TEXTURE_RIGHT,
-    KEY_PRESS_TEXTURE_DOWN,
-    KEY_PRESS_TEXTURE_TOTAL
+public:
+    //Initializes variables
+    LTexture();
+
+    //Deallocates memory
+    ~LTexture();
+
+    //Loads image at specified path
+    bool loadFromFile(std::string path);
+
+    //Deallocates texture
+    void free();
+
+    //Renders texture at given point
+    void render(int x, int y);
+
+    //Gets image dimensions
+    int getWidth();
+    int getHeight();
+
+private:
+    //The actual hardware texture
+    SDL_Texture *mTexture;
+
+    //Image dimensions
+    int mWidth;
+    int mHeight;
 };
+
+//The window we'll be rendering to
+SDL_Window *gWindow = NULL;
+
+//The window renderer
+SDL_Renderer *gRenderer = NULL;
+
+//Scene textures
+LTexture gFooTexture;
+LTexture gBackgroundTexture;
+
+LTexture::LTexture()
+{
+    //Initialize
+    mTexture = NULL;
+    mWidth = 0;
+    mHeight = 0;
+}
+
+LTexture::~LTexture()
+{
+    //Deallocate
+    free();
+}
 
 //Starts up SDL and creates window
 bool init();
