@@ -24,6 +24,9 @@ public:
     //Deallocates texture
     void free();
 
+    //Set color moduleation
+    void setColor(Uint8 red, Uint8 green, Uint8 blue);
+
     //Renders texture at given point
     void render(int x, int y, SDL_Rect *clip = NULL);
 
@@ -58,12 +61,9 @@ SDL_Window *gWindow = NULL;
 //The window renderer
 SDL_Renderer *gRenderer = NULL;
 
-//Current displayed render
-SDL_Texture *gTexture = NULL;
-
 //Scene sprites
 SDL_Rect gSpriteClips[4];
-LTexture gSpriteSheetTexture;
+LTexture gModulationTexture;
 
 LTexture::LTexture()
 {
@@ -158,42 +158,22 @@ int LTexture::getHeight()
     return mHeight;
 }
 
+void LTexture::setColor(Uint8 red, Uint8 green, Uint8 blue)
+{
+    //Modulate texture
+    SDL_SetTextureColorMod(mTexture, red, green, blue);
+}
+
 bool loadMedia()
 {
     //Loading success flag
     bool success = true;
 
     //Load Foo texture
-    if (!gSpriteSheetTexture.loadFromFile("res/sprites.png"))
+    if (!gModulationTexture.loadFromFile("res/colors.png"))
     {
-        printf("Failed to load foo texture image\n");
+        printf("Failed to load colors texture image\n");
         success = false;
-    }
-    else
-    {
-        //Set top left sprit
-        gSpriteClips[0].x = 0;
-        gSpriteClips[0].y = 0;
-        gSpriteClips[0].w = 100;
-        gSpriteClips[0].h = 100;
-
-        //Set top right sprite
-        gSpriteClips[1].x = 100;
-        gSpriteClips[1].y = 0;
-        gSpriteClips[1].w = 100;
-        gSpriteClips[1].h = 100;
-
-        //Set bottom left sprite
-        gSpriteClips[2].x = 0;
-        gSpriteClips[2].y = 100;
-        gSpriteClips[2].w = 100;
-        gSpriteClips[2].h = 100;
-
-        //Set bottom right sprite
-        gSpriteClips[3].x = 100;
-        gSpriteClips[3].y = 100;
-        gSpriteClips[3].w = 100;
-        gSpriteClips[3].h = 100;
     }
 
     return success;
@@ -202,7 +182,7 @@ bool loadMedia()
 void close()
 {
     //Free loaded images
-    gSpriteSheetTexture.free();
+    gModulationTexture.free();
 
     //Destroy window
     SDL_DestroyRenderer(gRenderer);
@@ -285,6 +265,11 @@ int main(int argc, char *args[])
             //Event handler
             SDL_Event e;
 
+            //Modulation components
+            Uint8 r = 255;
+            Uint8 g = 255;
+            Uint8 b = 255;
+
             //While application is running
             while (!quit)
             {
@@ -296,23 +281,47 @@ int main(int argc, char *args[])
                     {
                         quit = true;
                     }
+                    //On keypress chage rgb values
+                    else if (e.type == SDL_KEYDOWN)
+                    {
+                        switch (e.key.keysym.sym)
+                        {
+                        //Increase red
+                        case SDLK_q:
+                            r += 32;
+                            break;
+
+                        //Increase green
+                        case SDLK_w:
+                            g += 32;
+                            break;
+
+                        case SDLK_e:
+                            b += 32;
+                            break;
+
+                        case SDLK_a:
+                            r -= 32;
+                            break;
+
+                        case SDLK_s:
+                            g -= 32;
+                            break;
+
+                        case SDLK_d:
+                            b -= 32;
+                            break;
+                        }
+                    }
                 }
 
                 //Clear screen
                 SDL_SetRenderDrawColor(gRenderer, 0xFF, 0xFF, 0xFF, 0xFF);
                 SDL_RenderClear(gRenderer);
 
-                //Render top left sprite to screen
-                gSpriteSheetTexture.render(0, 0, &gSpriteClips[0]);
-
-                //Render top right sprite to screen
-                gSpriteSheetTexture.render(SCREEN_WIDTH - gSpriteClips[1].w, 0, &gSpriteClips[1]);
-
-                //Render bottom left sprite to screen
-                gSpriteSheetTexture.render(0, SCREEN_HEIGHT - gSpriteClips[2].h, &gSpriteClips[2]);
-
-                //Render bottom right sprite to screen
-                gSpriteSheetTexture.render(SCREEN_WIDTH - gSpriteClips[3].w, SCREEN_HEIGHT - gSpriteClips[3].h, &gSpriteClips[3]);
+                //Modulate and render texture
+                gModulationTexture.setColor(r, g, b);
+                gModulationTexture.render(0, 0);
 
                 //Update the screen
                 SDL_RenderPresent(gRenderer);
